@@ -333,11 +333,13 @@
     .weee-search-link {
       font-size: 0.8rem;
       color: #e8401c;
-      text-decoration: none;
+      background: none;
+      cursor: pointer;
       padding: 0.3rem 0.6rem;
       border: 1px solid #e8401c;
       border-radius: 8px;
     }
+    .weee-search-link:hover { background: #fff0ee; }
     .weee-open-all {
       display: block;
       width: 100%;
@@ -417,10 +419,10 @@
       <h2>🥬 Shop on Weee</h2>
       <button class="modal-close" onclick="closeWeeeModal()">×</button>
     </div>
-    <p>These unchecked items will open in Weee search. Tap each to add to your cart, or open all at once.</p>
+    <p>Tap each item to open in the Weee app (or web if not installed). Or open all at once.</p>
     <ul class="weee-items" id="weeeItemsList"></ul>
     <button class="weee-open-all" onclick="openAllWeee()">Open all in Weee →</button>
-    <div class="weee-note">Opens Weee search in new tabs. You confirm before buying.</div>
+    <div class="weee-note">Opens Weee app directly if installed, otherwise opens website.</div>
   </div>
 </div>
 
@@ -606,6 +608,35 @@
   // --- Weee ---
   let uncheckedItems = [];
 
+  // Smart Weee launcher: tries app deep link first, falls back to web
+  function launchWeee(itemName) {
+    const encoded = encodeURIComponent(itemName);
+    const appUrl = `weee://search?q=${encoded}`;
+    const webUrl = `https://www.sayweee.com/en/search?q=${encoded}`;
+
+    // Try to open the app via custom URL scheme
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    let appOpened = false;
+    const timer = setTimeout(() => {
+      // App didn't respond — open web fallback
+      if (!appOpened) window.open(webUrl, '_blank', 'noopener');
+      document.body.removeChild(iframe);
+    }, 600);
+
+    // Listen for page blur = app launched successfully
+    window.addEventListener('blur', function onBlur() {
+      appOpened = true;
+      clearTimeout(timer);
+      document.body.removeChild(iframe);
+      window.removeEventListener('blur', onBlur);
+    }, { once: true });
+
+    iframe.src = appUrl;
+  }
+
   function openWeeeModal() {
     if (uncheckedItems.length === 0) return;
     const list = document.getElementById('weeeItemsList');
@@ -613,10 +644,9 @@
     uncheckedItems.forEach(item => {
       const li = document.createElement('li');
       li.className = 'weee-item';
-      const url = `https://www.sayweee.com/en/search?q=${encodeURIComponent(item.name)}`;
       li.innerHTML = `
         <span class="weee-item-name">${item.name}</span>
-        <a class="weee-search-link" href="${url}" target="_blank" rel="noopener">Search →</a>
+        <button class="weee-search-link" onclick="launchWeee('${item.name.replace(/'/g, "\\'")}')">Open in app →</button>
       `;
       list.appendChild(li);
     });
@@ -628,12 +658,12 @@
   }
 
   function openAllWeee() {
+    // Open one at a time with delay to allow app switching
     uncheckedItems.forEach((item, i) => {
-      const url = `https://www.sayweee.com/en/search?q=${encodeURIComponent(item.name)}`;
-      setTimeout(() => window.open(url, '_blank', 'noopener'), i * 300);
+      setTimeout(() => launchWeee(item.name), i * 800);
     });
     closeWeeeModal();
-    showToast(`Opening ${uncheckedItems.length} Weee searches...`);
+    showToast(`Opening ${uncheckedItems.length} items in Weee...`);
   }
 
   // Close modal on overlay click

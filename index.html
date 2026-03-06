@@ -608,33 +608,13 @@
   // --- Weee ---
   let uncheckedItems = [];
 
-  // Smart Weee launcher: tries app deep link first, falls back to web
+  // Smart Weee launcher via AppsFlyer OneLink
   function launchWeee(itemName) {
     const encoded = encodeURIComponent(itemName);
-    const appUrl = `weee://search?q=${encoded}`;
-    const webUrl = `https://www.sayweee.com/en/search?q=${encoded}`;
-
-    // Try to open the app via custom URL scheme
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-
-    let appOpened = false;
-    const timer = setTimeout(() => {
-      // App didn't respond — open web fallback
-      if (!appOpened) window.open(webUrl, '_blank', 'noopener');
-      document.body.removeChild(iframe);
-    }, 600);
-
-    // Listen for page blur = app launched successfully
-    window.addEventListener('blur', function onBlur() {
-      appOpened = true;
-      clearTimeout(timer);
-      document.body.removeChild(iframe);
-      window.removeEventListener('blur', onBlur);
-    }, { once: true });
-
-    iframe.src = appUrl;
+    // OneLink with af_dp passes a deep link to the app if installed
+    // Falls back to App Store / web otherwise
+    const oneLinkUrl = `https://weeeone.onelink.me/3WRB/qu9i8ui9?af_dp=weee%3A%2F%2Fsearch%3Fq%3D${encoded}&deep_link_value=search&deep_link_sub1=${encoded}&af_web_dp=https%3A%2F%2Fwww.sayweee.com%2Fen%2Fsearch%3Fq%3D${encoded}`;
+    window.location.href = oneLinkUrl;
   }
 
   function openWeeeModal() {
@@ -658,9 +638,10 @@
   }
 
   function openAllWeee() {
-    // Open one at a time with delay to allow app switching
     uncheckedItems.forEach((item, i) => {
-      setTimeout(() => launchWeee(item.name), i * 800);
+      const encoded = encodeURIComponent(item.name);
+      const url = `https://weeeone.onelink.me/3WRB/qu9i8ui9?af_dp=weee%3A%2F%2Fsearch%3Fq%3D${encoded}&deep_link_value=search&deep_link_sub1=${encoded}&af_web_dp=https%3A%2F%2Fwww.sayweee.com%2Fen%2Fsearch%3Fq%3D${encoded}`;
+      setTimeout(() => window.open(url, '_blank', 'noopener'), i * 400);
     });
     closeWeeeModal();
     showToast(`Opening ${uncheckedItems.length} items in Weee...`);

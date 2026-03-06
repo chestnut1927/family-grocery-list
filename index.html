@@ -263,6 +263,100 @@
       color: #ccc;
       margin-bottom: 1rem;
     }
+
+    /* Weee button */
+    .weee-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.85rem;
+      background: #fff;
+      color: #e8401c;
+      border: 2px solid #e8401c;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 1.5rem;
+      text-decoration: none;
+    }
+    .weee-btn:hover { background: #e8401c; color: white; }
+    .weee-btn:active { transform: scale(0.98); }
+    .weee-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* Weee modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      padding: 1.5rem 1.25rem 2rem;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; font-size: 1.4rem;
+      cursor: pointer; color: #aaa; line-height: 1;
+    }
+    .modal p { font-size: 0.9rem; color: #666; margin-bottom: 1rem; }
+    .weee-items { list-style: none; margin-bottom: 1.25rem; }
+    .weee-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.95rem;
+    }
+    .weee-item:last-child { border-bottom: none; }
+    .weee-item-name { flex: 1; }
+    .weee-search-link {
+      font-size: 0.8rem;
+      color: #e8401c;
+      text-decoration: none;
+      padding: 0.3rem 0.6rem;
+      border: 1px solid #e8401c;
+      border-radius: 8px;
+    }
+    .weee-open-all {
+      display: block;
+      width: 100%;
+      padding: 0.85rem;
+      background: #e8401c;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .weee-note {
+      font-size: 0.75rem;
+      color: #bbb;
+      text-align: center;
+      margin-top: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -296,6 +390,10 @@
 
   <div class="last-updated" id="lastUpdated"></div>
 
+  <button class="weee-btn disabled" id="weeeBtn" onclick="openWeeeModal()">
+    🥬 Shop unchecked items on Weee
+  </button>
+
   <div id="activeSection">
     <div class="section-header">
       <span class="section-label">To get</span>
@@ -309,6 +407,20 @@
       <button class="clear-btn" onclick="clearChecked()">Clear all</button>
     </div>
     <ul class="items-list" id="checkedList"></ul>
+  </div>
+</div>
+
+<!-- Weee Modal -->
+<div class="modal-overlay" id="weeeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🥬 Shop on Weee</h2>
+      <button class="modal-close" onclick="closeWeeeModal()">×</button>
+    </div>
+    <p>These unchecked items will open in Weee search. Tap each to add to your cart, or open all at once.</p>
+    <ul class="weee-items" id="weeeItemsList"></ul>
+    <button class="weee-open-all" onclick="openAllWeee()">Open all in Weee →</button>
+    <div class="weee-note">Opens Weee search in new tabs. You confirm before buying.</div>
   </div>
 </div>
 
@@ -397,6 +509,17 @@
     const active = items.filter(i => !i.checked);
     const checked = items.filter(i => i.checked);
 
+    // Update Weee button
+    uncheckedItems = active;
+    const weeeBtn = document.getElementById('weeeBtn');
+    if (active.length > 0) {
+      weeeBtn.classList.remove('disabled');
+      weeeBtn.textContent = `🥬 Shop ${active.length} item${active.length > 1 ? 's' : ''} on Weee`;
+    } else {
+      weeeBtn.classList.add('disabled');
+      weeeBtn.textContent = '🥬 Shop unchecked items on Weee';
+    }
+
     activeList.innerHTML = '';
     checkedList.innerHTML = '';
 
@@ -479,6 +602,44 @@
     loadItems();
     showToast('Cleared checked items');
   }
+
+  // --- Weee ---
+  let uncheckedItems = [];
+
+  function openWeeeModal() {
+    if (uncheckedItems.length === 0) return;
+    const list = document.getElementById('weeeItemsList');
+    list.innerHTML = '';
+    uncheckedItems.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'weee-item';
+      const url = `https://www.weee.com/search?q=${encodeURIComponent(item.name)}`;
+      li.innerHTML = `
+        <span class="weee-item-name">${item.name}</span>
+        <a class="weee-search-link" href="${url}" target="_blank" rel="noopener">Search →</a>
+      `;
+      list.appendChild(li);
+    });
+    document.getElementById('weeeModal').classList.add('show');
+  }
+
+  function closeWeeeModal() {
+    document.getElementById('weeeModal').classList.remove('show');
+  }
+
+  function openAllWeee() {
+    uncheckedItems.forEach((item, i) => {
+      const url = `https://www.weee.com/search?q=${encodeURIComponent(item.name)}`;
+      setTimeout(() => window.open(url, '_blank', 'noopener'), i * 300);
+    });
+    closeWeeeModal();
+    showToast(`Opening ${uncheckedItems.length} Weee searches...`);
+  }
+
+  // Close modal on overlay click
+  document.getElementById('weeeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeWeeeModal();
+  });
 
   // --- Toast ---
   function showToast(msg) {

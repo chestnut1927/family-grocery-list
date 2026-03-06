@@ -613,7 +613,7 @@
     uncheckedItems.forEach(item => {
       const li = document.createElement('li');
       li.className = 'weee-item';
-      const url = `https://www.weee.com/search?q=${encodeURIComponent(item.name)}`;
+      const url = `https://www.sayweee.com/en/search?q=${encodeURIComponent(item.name)}`;
       li.innerHTML = `
         <span class="weee-item-name">${item.name}</span>
         <a class="weee-search-link" href="${url}" target="_blank" rel="noopener">Search →</a>
@@ -629,7 +629,7 @@
 
   function openAllWeee() {
     uncheckedItems.forEach((item, i) => {
-      const url = `https://www.weee.com/search?q=${encodeURIComponent(item.name)}`;
+      const url = `https://www.sayweee.com/en/search?q=${encodeURIComponent(item.name)}`;
       setTimeout(() => window.open(url, '_blank', 'noopener'), i * 300);
     });
     closeWeeeModal();

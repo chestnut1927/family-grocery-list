@@ -1,0 +1,12 @@
+{
+  "name": "family-grocery-list",
+  "version": "1.0.0",
+  "description": "Family grocery list app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
